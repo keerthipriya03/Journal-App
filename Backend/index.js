@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2');
+require('dotenv').config();
+
 
 const app = express();
 
@@ -10,11 +12,14 @@ app.use(express.json()); // ✅ parse incoming JSON
 app.use(express.urlencoded({ extended: true })); // ✅ parse incoming URL-encoded(form) data
 
 const connection = mysql.createConnection({
-    host: 'localhost', //db host
-    user: 'root', //db username
-    password: 'Priyareddy@22', //db password
-    database: 'myPost' //db name
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
 });
+
+const PORT = process.env.PORT || 3000;
+
 
 connection.connect((err) => {
     if (err) {
@@ -150,6 +155,6 @@ app.put('/editPost', (req, res) => {
 });
 
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
