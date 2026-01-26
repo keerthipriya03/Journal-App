@@ -1,160 +1,226 @@
-const express = require('express');
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-const mysql = require('mysql2');
-require('dotenv').config();
+// import express from "express";
+// import mongoose from "mongoose";
+// import cors from "cors";
+// import dotenv from "dotenv";
+// import Post from "./models/Post.js";
+// import User from "./models/User.js";
+// import bcrypt from "bcryptjs";
 
+// dotenv.config(); // Load .env file
+
+// const app = express();
+// const PORT = process.env.PORT || 3000;
+
+// // Middleware
+// app.use(cors());
+// app.use(express.json());
+
+// // Connect to MongoDB
+// mongoose.connect(process.env.MONGO_URI)
+//     .then(() => console.log("MongoDB connected successfully"))
+//     .catch(err => console.error("MongoDB connection error:", err));
+
+// // Routes
+
+// //Register
+// app.post("/register", async (req, res) => {
+//     try {
+//         const { username, email, password } = req.body;
+//         if (!username || !email || !password) return res.status(400).send("All fields are required");
+
+//         const existingUser = await User.findOne({ email });
+//         if (existingUser) return res.status(400).send("User already exists");
+
+//         const hashedPassword = await bcrypt.hash(password, 10);
+
+//         const user = new User({ username, email, password: hashedPassword });
+//         await user.save();
+
+//         res.send("User registered successfully");
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Server error");
+//     }
+// });
+
+// Login
+// app.post("/login", async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+//         if (!email || !password) return res.status(400).send("All fields are required");
+
+//         const user = await User.findOne({ email });
+//         if (!user) return res.status(404).send("User not found");
+
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch) return res.status(401).send("Invalid password");
+
+//         res.json({ message: "Login successful", userID: user._id, username: user.username });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Server error");
+//     }
+// });
+
+
+import express from "express";
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import cors from "cors";
+import dotenv from "dotenv";
+import User from "./models/User.js"; // make sure path is correct
+import Post from "./models/Post.js"; 
+
+dotenv.config();
 
 const app = express();
-
 app.use(cors());
-app.use(express.json()); // ✅ parse incoming JSON
-app.use(express.urlencoded({ extended: true })); // ✅ parse incoming URL-encoded(form) data
+app.use(express.json());
 
-const connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected successfully"))
+  .catch(err => console.log("MongoDB connection error:", err));
 
 const PORT = process.env.PORT || 3000;
 
-
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to the database:', err);
-        return;
-    }
-    console.log('Connected to the MySQL database.');
-});
-
-app.get('/', (req, res) => {
-    // console.log(req);
-    res.status(200).json({message:'Success'});
-});
-
-app.post('/register', async (req, res) => {
-    // console.log(req.body);
+// REGISTER
+app.post("/register", async (req, res) => {
+  try {
     const { email, password } = req.body;
-    
-    try{
-        const hashedPassword = await bcrypt.hash(password, 10);
-        // Here, you would typically store the email and hashedPassword in your database
-        // console.log(`Registered user: `,{
-        //     email, hashedPassword}
-        // );
-        console.log("Hashed Password: ", hashedPassword)
-        connection.query(`insert into Users(EmailID,HashedPassword) values('${email}','${hashedPassword}')`, (err, results) => {
-            if (err) {
-                res.status(500).send('Error registering user in database');
-            }
-            res.status(200).send('User registered successfully in database');
-        });
-        // res.status(200).send('User registered successfully');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error registering user');
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
-    // res.status(200).json({message:'User Registered'});
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ email, password: hashedPassword });
+    await newUser.save();
+
+    res.status(201).json({ message: "User registered successfully", userID: newUser._id });
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
 });
 
-app.post('/login', async (req, res) => {
-    console.log("Login attempt:", req.body);
+// LOGIN
+app.post("/login", async (req, res) => {
+  try {
     const { email, password } = req.body;
-    // Here, you would typically retrieve the hashed password from your database
-    // let dummyHashedPassword= '$2b$10$T2tm53jJnaMzZbC/RVhiv.QyO1/SXPdnfoGfdEh7drEA1oTWnJ2HK'; // bcrypt hash for 'password'
-    let hashedPassword = "";
-    let userID = "";
-    connection.query(`select ID,HashedPassword from Users where EmailID='${email}'`, async (err, result) => {
-        if (err) {
-            res.status(500);
-            return
-        }
-        // console.log(result);
-        hashedPassword = result[0].HashedPassword;
-        console.log(hashedPassword)
-        userID = result[0].ID;
-        let response = await bcrypt.compare(password, hashedPassword);
-        // console.log(`Is login successful: ${response}`);
-        if (response) {
-            res.status(200).json({userID: userID});
-            return
-        } else {
-            res.status(500)
-            return
-        }
-    })  
-})
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+
+    res.status(200).json({ message: "Login successful", userID: user._id });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error. Please try again later" });
+  }
+});
 
 
-app.post('/createpost', (req, res) => {
+// Create a new post
+app.post("/createpost", async (req, res) => {
+  try {
     const { postTitle, postDescription, userID } = req.body;
 
-    const query = `INSERT INTO Posts (UserID, postTitle, postDescription) VALUES (?, ?, ?)`;
+    if (!postTitle || !postDescription || !userID)
+      return res.status(400).send("All fields are required");
 
-    connection.query(query, [userID, postTitle, postDescription], (err) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).send("Error saving post");
-        }
-        res.status(200).send("Post created successfully");
-    });
+    const newPost = new Post({ postTitle, postDescription, userID });
+    await newPost.save();
+
+    res.status(201).send("Post created successfully");
+  } catch (err) {
+    console.error("Create post error:", err);
+    res.status(500).send("Server error while creating post");
+  }
 });
 
 
+// Get all posts by logged-in user
+app.get("/getMyPosts", async (req, res) => {
+  try {
+    const { userID } = req.query;
+    if (!userID) return res.status(400).send("User ID missing");
 
-app.get('/getMyPosts', (req, res) => {
-    const userID = req.query.userID;
-
-    const query = `SELECT * FROM Posts WHERE UserID = ?`;
-
-    connection.query(query, [userID], (err, result) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).send("Error fetching posts");
-        }
-        res.status(200).json(result);
-    });
+    const posts = await Post.find({ userID }).sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    console.error("Get my posts error:", err);
+    res.status(500).send("Server error while fetching posts");
+  }
 });
 
-app.get('/getPostById', (req, res) => {
-    const postID = req.query.postID;
 
-    const query = `SELECT * FROM Posts WHERE ID = ?`;
+// Get post by ID (only if it belongs to logged-in user)
+app.get("/getPostById", async (req, res) => {
+  try {
+    const { postID } = req.query;
+    if (!postID) return res.status(400).send("Post ID missing");
 
-    connection.query(query, [postID], (err, result) => {
-        if (err) return res.status(500).send("Error fetching post");
-        res.status(200).json(result[0]);
-    });
+    const post = await Post.findById(postID);
+    if (!post) return res.status(404).send("Post not found");
+
+    res.json(post);
+  } catch (err) {
+    console.error("Get post error:", err);
+    res.status(500).send("Server error while fetching post");
+  }
 });
 
-app.delete('/deletePost', (req, res) => {
-    const { postID, userID } = req.body;
 
-    const query = `DELETE FROM Posts WHERE ID = ? AND UserID = ?`;
-    connection.query(query, [postID, userID], (err) => {
-        if (err) return res.status(500).send("Error deleting post");
-        res.status(200).send("Post deleted");
-    });
-});
-
-app.put('/editPost', (req, res) => {
+// Edit a post
+app.put("/editPost", async (req, res) => {
+  try {
     const { postID, postTitle, postDescription, userID } = req.body;
 
-    const query = `
-        UPDATE Posts 
-        SET postTitle = ?, postDescription = ?
-        WHERE ID = ? AND UserID = ?
-    `;
+    const post = await Post.findById(postID);
+    if (!post) return res.status(404).send("Post not found");
+    if (post.userID.toString() !== userID) return res.status(403).send("Unauthorized");
 
-    connection.query(query, [postTitle, postDescription, postID, userID], (err) => {
-        if (err) return res.status(500).send("Error updating post");
-        res.status(200).send("Post updated successfully");
-    });
+    post.postTitle = postTitle;
+    post.postDescription = postDescription;
+    await post.save();
+
+    res.send("Post updated successfully");
+  } catch (err) {
+    console.error("Edit post error:", err);
+    res.status(500).send("Server error while editing post");
+  }
 });
 
 
+// Delete a post
+app.delete("/deletePost", async (req, res) => {
+  try {
+    const { postID, userID } = req.body;
+
+    const post = await Post.findById(postID);
+    if (!post) return res.status(404).send("Post not found");
+    if (post.userID.toString() !== userID) return res.status(403).send("Unauthorized");
+
+    await Post.findByIdAndDelete(postID);
+    res.send("Post deleted successfully");
+  } catch (err) {
+    console.error("Delete post error:", err);
+    res.status(500).send("Server error while deleting post");
+  }
+});
+
+
+// Start server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
