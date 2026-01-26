@@ -96,7 +96,7 @@
 
   <div class="top-bar">
     <div class="container py-3 d-flex justify-content-between align-items-center">
-      <a href="/Frontend/Pages/Feed.html" class="btn btn-outline-primary">← Back</a>
+      <a href="/Frontend/Pages/index.html" class="btn btn-outline-primary">← Back</a>
       <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
     </div>
   </div>
@@ -156,7 +156,7 @@
         });
         const text = await res.text();
         alert(text);
-        if (res.ok) window.location.href = "/Frontend/Pages/Feed.html";
+        if (res.ok) window.location.href = "/Frontend/Pages/index.html";
       } catch (err) {
         console.error(err);
         alert("Server error!");
