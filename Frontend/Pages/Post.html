@@ -149,7 +149,7 @@
       };
 
       try {
-        const res = await fetch("http://localhost:3000/createpost", {
+        const res = await fetch("https://journal-app-backend-rzjb.onrender.com/createpost", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)

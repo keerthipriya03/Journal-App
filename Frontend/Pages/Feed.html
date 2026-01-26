@@ -132,7 +132,7 @@
       window.location.href = "/Frontend/Pages/login.html";
     }
 
-    fetch(`http://localhost:3000/getMyPosts?userID=${userID}`)
+    fetch(`https://journal-app-backend-rzjb.onrender.com/getMyPosts?userID=${userID}`)
       .then(res => res.json())
       .then(posts => {
         const container = document.querySelector(".allPosts");
