@@ -129,7 +129,7 @@
     const userID = localStorage.getItem("userID");
     if (!userID) {
       alert("Login first!");
-      window.location.href = "/Frontend/Pages/login.html";
+      window.location.href = "Login.html";
     }
 
     fetch(`https://journal-app-backend-rzjb.onrender.com/getMyPosts?userID=${userID}`)
